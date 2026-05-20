@@ -222,27 +222,29 @@
   }
   .session-chips {
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin: 7px 0 5px;
+    flex-direction: column;
+    gap: 5px;
+    margin: 6px 0 4px;
   }
   .chip {
-    display: flex;
-    align-items: center;
-    gap: 5px;
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 4px;
     font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 6px;
+    font-size: 10px;
+    padding: 3px 7px;
+    border-radius: 5px;
     border: 1px solid var(--border2);
     background: var(--bg3);
     color: var(--text);
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    width: 100%;
   }
-  .chip i { font-size: 13px; }
+  .chip i { font-size: 11px; flex-shrink: 0; }
   .chip-pace { border-color: rgba(184,255,87,0.22); color: var(--accent); background: rgba(184,255,87,0.07); }
   .chip-hr { border-color: rgba(255,107,107,0.22); color: #ff9898; background: rgba(255,107,107,0.07); }
-  .chip-label { font-size: 10px; color: var(--text3); margin-right: 1px; }
+  .chip-label { font-size: 9px; color: var(--text3); margin-right: 1px; flex-shrink: 0; }
 
   /* ZONES */
   .zones-card {
@@ -666,48 +668,46 @@
 
 <!-- PROGRESS SECTION -->
 <div id="sec-progress" class="section">
-  <div class="stats-grid" id="stats-grid">
+  <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-card-label">Total km</div>
-      <div class="stat-card-val" id="stat-total-km">0</div>
+      <div class="stat-card-val" id="stat-total-km">—</div>
       <div class="stat-card-sub">siden start</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Løbeture</div>
-      <div class="stat-card-val" id="stat-runs">0</div>
+      <div class="stat-card-val" id="stat-runs">—</div>
       <div class="stat-card-sub">registreret</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-label">Bedste pace</div>
-      <div class="stat-card-val" id="stat-best-pace">—</div>
-      <div class="stat-card-sub">min/km</div>
+      <div class="stat-card-label">Aktive uger</div>
+      <div class="stat-card-val" id="stat-weeks">—</div>
+      <div class="stat-card-sub">med mindst 1 tur</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Uger i træk</div>
+      <div class="stat-card-val" id="stat-streak" style="color:var(--accent);">—</div>
+      <div class="stat-card-sub">nuværende streak</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Længste tur</div>
+      <div class="stat-card-val" id="stat-longest">—</div>
+      <div class="stat-card-sub">km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Seneste pace</div>
+      <div class="stat-card-val" id="stat-last-pace">—</div>
+      <div class="stat-card-sub" id="stat-last-pace-sub">min/km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Gns. puls</div>
+      <div class="stat-card-val" id="stat-avg-hr">—</div>
+      <div class="stat-card-sub">bpm (loggede ture)</div>
     </div>
     <div class="stat-card">
       <div class="stat-card-label">Gns. RPE</div>
       <div class="stat-card-val" id="stat-avg-rpe">—</div>
-      <div class="stat-card-sub">belastning</div>
-    </div>
-  </div>
-
-  <div class="chart-card">
-    <div class="chart-title">Pace udvikling</div>
-    <div id="pace-chart-wrap" style="position:relative; height:200px;">
-      <div class="empty-chart" id="pace-empty">
-        <i class="ti ti-chart-line" aria-hidden="true"></i>
-        Log dine løbeture for at se pace-udvikling
-      </div>
-      <canvas id="paceChart" style="display:none;" role="img" aria-label="Pace udvikling over tid"></canvas>
-    </div>
-  </div>
-
-  <div class="chart-card">
-    <div class="chart-title">Ugentlig volumen (km)</div>
-    <div id="vol-chart-wrap" style="position:relative; height:200px;">
-      <div class="empty-chart" id="vol-empty">
-        <i class="ti ti-chart-bar" aria-hidden="true"></i>
-        Log dine løbeture for at se ugentlig volumen
-      </div>
-      <canvas id="volChart" style="display:none;" role="img" aria-label="Ugentlig løbevolumen"></canvas>
+      <div class="stat-card-sub">belastning 1–10</div>
     </div>
   </div>
 
@@ -960,7 +960,7 @@ function showTab(tab) {
     document.querySelectorAll('.nav-btn')[['plan','log','progress','zones'].indexOf(t)].classList.toggle('active', t === tab);
   });
   if (tab === 'log') renderRuns();
-  if (tab === 'progress') { updateStats(); renderCharts(); }
+  if (tab === 'progress') { updateStats(); }
 }
 
 // Set today as default date
@@ -1072,26 +1072,61 @@ function renderRuns() {
   }).join('');
 }
 
-let paceChart, volChart;
+let paceChart, volChart, effChart, typeChart;
 
 function updateStats() {
   const runs = getRuns();
+  if (!runs.length) return;
+
+  const sorted = [...runs].sort((a,b) => a.date.localeCompare(b.date));
+
+  // Total km
   const totalKm = runs.reduce((s, r) => s + r.dist, 0);
   document.getElementById('stat-total-km').textContent = totalKm.toFixed(1);
+
+  // Løbeture
   document.getElementById('stat-runs').textContent = runs.length;
 
-  const paces = runs.filter(r => r.pace).map(r => calcPaceNum(r.dist, r.time)).filter(p => p);
-  if (paces.length) {
-    const best = Math.min(...paces);
-    const min = Math.floor(best);
-    const sec = Math.round((best - min) * 60);
-    document.getElementById('stat-best-pace').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  // Aktive uger + streak
+  const allWeeks = new Set(runs.map(r => getWeekKey(r.date)));
+  document.getElementById('stat-weeks').textContent = allWeeks.size;
+  const weekArr = Array.from(allWeeks).sort();
+  let cur = 1, tmp = 1;
+  for (let i = 1; i < weekArr.length; i++) {
+    const diff = Math.round((new Date(weekArr[i]) - new Date(weekArr[i-1])) / (7*24*3600*1000));
+    if (diff === 1) tmp++; else tmp = 1;
+  }
+  for (let i = weekArr.length - 1; i > 0; i--) {
+    const diff = Math.round((new Date(weekArr[i]) - new Date(weekArr[i-1])) / (7*24*3600*1000));
+    if (diff === 1) cur++; else break;
+  }
+  document.getElementById('stat-streak').textContent = allWeeks.size ? cur : 0;
+
+  // Længste tur
+  const longest = Math.max(...runs.map(r => r.dist));
+  document.getElementById('stat-longest').textContent = longest.toFixed(1);
+
+  // Seneste pace
+  const lastWithTime = [...sorted].reverse().find(r => r.dist && r.time);
+  if (lastWithTime) {
+    const p = calcPace(lastWithTime.dist, lastWithTime.time);
+    if (p) {
+      document.getElementById('stat-last-pace').textContent = p;
+      const typeNames = { easy:'Rolig', tempo:'Tempo', interval:'Interval', long:'Langtur', recovery:'Restitution' };
+      document.getElementById('stat-last-pace-sub').textContent = typeNames[lastWithTime.type] || 'min/km';
+    }
   }
 
-  if (runs.length) {
-    const avgRpe = runs.reduce((s, r) => s + r.rpe, 0) / runs.length;
-    document.getElementById('stat-avg-rpe').textContent = avgRpe.toFixed(1);
+  // Gns. puls
+  const hrRuns = runs.filter(r => r.hr);
+  if (hrRuns.length) {
+    const avgHr = hrRuns.reduce((s, r) => s + r.hr, 0) / hrRuns.length;
+    document.getElementById('stat-avg-hr').textContent = Math.round(avgHr);
   }
+
+  // Gns. RPE
+  const avgRpe = runs.reduce((s, r) => s + r.rpe, 0) / runs.length;
+  document.getElementById('stat-avg-rpe').textContent = avgRpe.toFixed(1);
 }
 
 function getWeekKey(dateStr) {
@@ -1100,103 +1135,6 @@ function getWeekKey(dateStr) {
   const mon = new Date(d);
   mon.setDate(d.getDate() - day + 1);
   return mon.toISOString().split('T')[0];
-}
-
-function renderCharts() {
-  const runs = getRuns();
-  if (!runs.length) return;
-
-  const sorted = [...runs].sort((a,b) => a.date.localeCompare(b.date));
-
-  // Pace chart
-  const paceData = sorted.filter(r => r.pace).map(r => ({
-    x: r.date,
-    y: parseFloat(calcPaceNum(r.dist, r.time).toFixed(2))
-  }));
-
-  if (paceData.length) {
-    document.getElementById('pace-empty').style.display = 'none';
-    const canvas = document.getElementById('paceChart');
-    canvas.style.display = 'block';
-    if (paceChart) paceChart.destroy();
-    paceChart = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: paceData.map(d => d.x),
-        datasets: [{
-          label: 'Pace (min/km)',
-          data: paceData.map(d => d.y),
-          borderColor: '#b8ff57',
-          backgroundColor: 'rgba(184,255,87,0.08)',
-          pointBackgroundColor: '#b8ff57',
-          pointRadius: 4,
-          tension: 0.3,
-          fill: true,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            reverse: true,
-            ticks: { color: '#5c5b58', callback: v => v.toFixed(1) },
-            grid: { color: 'rgba(255,255,255,0.05)' }
-          },
-          x: {
-            ticks: { color: '#5c5b58', maxTicksLimit: 6 },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          }
-        }
-      }
-    });
-  }
-
-  // Weekly volume chart
-  const weeklyVol = {};
-  sorted.forEach(r => {
-    const wk = getWeekKey(r.date);
-    weeklyVol[wk] = (weeklyVol[wk] || 0) + r.dist;
-  });
-  const wkLabels = Object.keys(weeklyVol).sort();
-  const wkData = wkLabels.map(k => parseFloat(weeklyVol[k].toFixed(1)));
-
-  if (wkLabels.length) {
-    document.getElementById('vol-empty').style.display = 'none';
-    const canvas2 = document.getElementById('volChart');
-    canvas2.style.display = 'block';
-    if (volChart) volChart.destroy();
-    volChart = new Chart(canvas2, {
-      type: 'bar',
-      data: {
-        labels: wkLabels.map(l => 'Uge ' + l.slice(5,7) + '/' + l.slice(2,4)),
-        datasets: [{
-          label: 'km',
-          data: wkData,
-          backgroundColor: 'rgba(184,255,87,0.25)',
-          borderColor: '#b8ff57',
-          borderWidth: 1,
-          borderRadius: 4,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: {
-            ticks: { color: '#5c5b58' },
-            grid: { color: 'rgba(255,255,255,0.05)' }
-          },
-          x: {
-            ticks: { color: '#5c5b58' },
-            grid: { color: 'rgba(255,255,255,0.04)' }
-          }
-        }
-      }
-    });
-  }
 }
 
 async function analyzeProgress() {
