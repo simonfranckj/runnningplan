@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10K Løbeplan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0e0f0e;
+    --bg2: #161714;
+    --bg3: #1e1f1d;
+    --bg4: #252623;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #f0ede6;
+    --text2: #9a9890;
+    --text3: #5c5b58;
+    --green: #8fb f57;
+    --accent: #b8ff57;
+    --accent2: #d4ff8a;
+    --accent-dim: rgba(184,255,87,0.12);
+    --accent-dim2: rgba(184,255,87,0.06);
+    --red: #ff6b6b;
+    --amber: #ffc55a;
+    --blue: #5ab4ff;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+  .header {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0e0f0e;
+    font-size: 18px;
+  }
+  .logo-text {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .logo-sub {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+  }
+  .goal-badge {
+    background: var(--accent-dim);
+    border: 1px solid rgba(184,255,87,0.25);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+  .nav {
+    display: flex;
+    gap: 0;
+  }
+  .nav-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text3);
+    padding: 12px 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.2px;
+  }
+  .nav-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .nav-btn:hover:not(.active) { color: var(--text2); }
+  .content { padding: 20px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* PLAN */
+  .week-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .week-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .week-header:hover { background: var(--bg3); }
+  .week-left { display: flex; align-items: center; gap: 12px; }
+  .week-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--bg4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+  .week-num.phase-base { background: rgba(90,180,255,0.12); color: var(--blue); }
+  .week-num.phase-build { background: rgba(255,197,90,0.12); color: var(--amber); }
+  .week-num.phase-specific { background: rgba(184,255,87,0.14); color: var(--accent); }
+  .week-num.phase-taper { background: rgba(255,107,107,0.12); color: var(--red); }
+  .week-title { font-size: 14px; font-weight: 600; }
+  .week-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .week-km {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .week-km i { font-size: 14px; transition: transform 0.2s; }
+  .week-km i.open { transform: rotate(180deg); }
+  .session-list { padding: 0 16px 14px; display: none; }
+  .session-list.open { display: block; }
+  .session {
+    border-top: 1px solid var(--border);
+    padding: 12px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .session-day {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    width: 26px;
+    flex-shrink: 0;
+    padding-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .session-body { flex: 1; }
+  .session-name {
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .type-tag {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.3px;
+    font-weight: 400;
+  }
+  .type-easy { background: rgba(90,180,255,0.12); color: var(--blue); }
+  .type-tempo { background: rgba(255,197,90,0.15); color: var(--amber); }
+  .type-interval { background: rgba(184,255,87,0.14); color: var(--accent); }
+  .type-long { background: rgba(180,130,255,0.14); color: #c49fff; }
+  .type-recovery { background: rgba(255,107,107,0.1); color: var(--red); }
+  .type-rest { background: var(--bg4); color: var(--text3); }
+  .type-race { background: rgba(184,255,87,0.25); color: var(--accent); border: 1px solid rgba(184,255,87,0.4); }
+  .session-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .session-zones { margin-top: 6px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .zone-pill {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 8px;
+    background: var(--bg4);
+    border-radius: 4px;
+    color: var(--text2);
+  }
+  .session-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 7px 0 5px;
+  }
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border2);
+    background: var(--bg3);
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .chip i { font-size: 13px; }
+  .chip-pace { border-color: rgba(184,255,87,0.22); color: var(--accent); background: rgba(184,255,87,0.07); }
+  .chip-hr { border-color: rgba(255,107,107,0.22); color: #ff9898; background: rgba(255,107,107,0.07); }
+  .chip-label { font-size: 10px; color: var(--text3); margin-right: 1px; }
+
+  /* ZONES */
+  .zones-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 12px;
+  }
+  .zones-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 14px;
+  }
+  .zone-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .zone-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    width: 60px;
+    flex-shrink: 0;
+  }
+  .zone-bar-wrap { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; }
+  .zone-bar { height: 100%; border-radius: 3px; }
+  .zone-range {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    width: 90px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pace-info {
+    background: var(--accent-dim2);
+    border: 1px solid rgba(184,255,87,0.15);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .pace-info h4 { font-size: 12px; color: var(--text2); margin-bottom: 10px; letter-spacing: 0.5px; }
+  .pace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pace-item { }
+  .pace-label { font-size: 11px; color: var(--text3); margin-bottom: 3px; }
+  .pace-value { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--text); font-weight: 500; }
+
+  /* LOG */
+  .log-form {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .log-form h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 16px;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-field { }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'DM Mono', monospace;
+  }
+  .form-field input, .form-field select, .form-field textarea {
+    width: 100%;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 10px 12px;
+    transition: border-color 0.2s;
+  }
+  .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .form-field select option { background: var(--bg4); }
+  .form-field textarea { resize: vertical; min-height: 60px; }
+  .rpe-slider {
+    -webkit-appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, #5ab4ff 0%, #b8ff57 50%, #ff6b6b 100%);
+    border: none !important;
+    padding: 0 !important;
+    cursor: pointer;
+  }
+  .rpe-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text);
+    cursor: pointer;
+  }
+  .rpe-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    text-align: center;
+    margin-top: 6px;
+  }
+  .btn-primary {
+    width: 100%;
+    background: var(--accent);
+    color: #0e0f0e;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    margin-top: 16px;
+    letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .runs-list { }
+  .run-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .run-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    text-align: center;
+    flex-shrink: 0;
+    width: 36px;
+  }
+  .run-day { font-size: 18px; font-weight: 600; line-height: 1; }
+  .run-mon { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .run-data { flex: 1; }
+  .run-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .run-stats { display: flex; gap: 14px; flex-wrap: wrap; }
+  .run-stat { }
+  .run-stat-val { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text); }
+  .run-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; }
+  .run-rpe {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .no-runs {
+    text-align: center;
+    color: var(--text3);
+    font-size: 14px;
+    padding: 32px 0;
+  }
+
+  /* PROGRESS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .stat-card-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 6px;
+  }
+  .stat-card-val {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+  }
+  .stat-card-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .chart-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 14px;
+  }
+  .ai-insight {
+    background: var(--accent-dim2);
+    border: 1px solid rgba(184,255,87,0.15);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .ai-insight i { color: var(--accent); font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+  .ai-insight-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+  .ai-insight-text strong { color: var(--text); font-weight: 600; }
+  .empty-chart {
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 13px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .empty-chart i { font-size: 28px; }
+
+  /* Phase tag on plan header */
+  .phase-tag {
+    font-size: 10px;
+    font-family: 'DM Mono', monospace;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .phase-base-tag { background: rgba(90,180,255,0.12); color: var(--blue); }
+  .phase-build-tag { background: rgba(255,197,90,0.12); color: var(--amber); }
+  .phase-specific-tag { background: rgba(184,255,87,0.14); color: var(--accent); }
+  .phase-taper-tag { background: rgba(255,107,107,0.12); color: var(--red); }
+  .phase-header {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 6px 0 8px;
+    margin-top: 4px;
+  }
+
+  /* AI powered button */
+  .ai-analyze-btn {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid rgba(184,255,87,0.25);
+    border-radius: var(--radius-sm);
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+    margin-bottom: 14px;
+  }
+  .ai-analyze-btn:hover { background: var(--accent-dim); }
+  .ai-loading { display: none; }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(184,255,87,0.3);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ai-result {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.7;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .ai-result.show { display: block; }
+
+  /* Garmin tip box */
+  .garmin-tip {
+    background: var(--bg3);
+    border-left: 2px solid var(--blue);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 10px 14px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.5;
+  }
+  .garmin-tip strong { color: var(--blue); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <div class="logo-icon"><i class="ti ti-run" aria-hidden="true"></i></div>
+      <div>
+        <div class="logo-text">10K på 50 min</div>
+        <div class="logo-sub">10 ugers plan · Garmin 245</div>
+      </div>
+    </div>
+    <div class="goal-badge">5:00/km</div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showTab('plan')">
+      <i class="ti ti-calendar" aria-hidden="true"></i> Plan
+    </button>
+    <button class="nav-btn" onclick="showTab('log')">
+      <i class="ti ti-pencil" aria-hidden="true"></i> Log
+    </button>
+    <button class="nav-btn" onclick="showTab('progress')">
+      <i class="ti ti-chart-line" aria-hidden="true"></i> Fremgang
+    </button>
+    <button class="nav-btn" onclick="showTab('zones')">
+      <i class="ti ti-heart-rate-monitor" aria-hidden="true"></i> Zoner
+    </button>
+  </nav>
+</div>
+
+<div class="content">
+
+<!-- PLAN SECTION -->
+<div id="sec-plan" class="section active">
+  <div id="plan-container"></div>
+</div>
+
+<!-- LOG SECTION -->
+<div id="sec-log" class="section">
+  <div class="log-form">
+    <h3>Registrer løbetur</h3>
+    <div class="form-grid">
+      <div class="form-field">
+        <label>Dato</label>
+        <input type="date" id="log-date">
+      </div>
+      <div class="form-field">
+        <label>Type</label>
+        <select id="log-type">
+          <option value="easy">Rolig tur</option>
+          <option value="tempo">Tempatur</option>
+          <option value="interval">Intervaltræning</option>
+          <option value="long">Langtur</option>
+          <option value="recovery">Restitution</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Distance (km)</label>
+        <input type="number" id="log-dist" step="0.1" min="0" placeholder="6.5">
+      </div>
+      <div class="form-field">
+        <label>Tid (min:sek)</label>
+        <input type="text" id="log-time" placeholder="35:20">
+      </div>
+      <div class="form-field">
+        <label>Gns. puls (bpm)</label>
+        <input type="number" id="log-hr" placeholder="155">
+      </div>
+      <div class="form-field">
+        <label>Kadence (spm)</label>
+        <input type="number" id="log-cad" placeholder="168">
+      </div>
+      <div class="form-field full">
+        <label>Anstrengelse (RPE 1–10): <span id="rpe-out">6</span></label>
+        <input type="range" class="rpe-slider" id="log-rpe" min="1" max="10" value="6"
+          oninput="document.getElementById('rpe-out').textContent=this.value">
+      </div>
+      <div class="form-field full">
+        <label>Noter</label>
+        <textarea id="log-notes" placeholder="Hvordan føltes turen? Vejr, ben, motivation..."></textarea>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="saveRun()">
+      <i class="ti ti-device-floppy"></i> Gem løbetur
+    </button>
+  </div>
+  <div id="runs-list" class="runs-list"></div>
+</div>
+
+<!-- PROGRESS SECTION -->
+<div id="sec-progress" class="section">
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card-label">Total km</div>
+      <div class="stat-card-val" id="stat-total-km">0</div>
+      <div class="stat-card-sub">siden start</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Løbeture</div>
+      <div class="stat-card-val" id="stat-runs">0</div>
+      <div class="stat-card-sub">registreret</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Bedste pace</div>
+      <div class="stat-card-val" id="stat-best-pace">—</div>
+      <div class="stat-card-sub">min/km</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Gns. RPE</div>
+      <div class="stat-card-val" id="stat-avg-rpe">—</div>
+      <div class="stat-card-sub">belastning</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Pace udvikling</div>
+    <div id="pace-chart-wrap" style="position:relative; height:200px;">
+      <div class="empty-chart" id="pace-empty">
+        <i class="ti ti-chart-line" aria-hidden="true"></i>
+        Log dine løbeture for at se pace-udvikling
+      </div>
+      <canvas id="paceChart" style="display:none;" role="img" aria-label="Pace udvikling over tid"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Ugentlig volumen (km)</div>
+    <div id="vol-chart-wrap" style="position:relative; height:200px;">
+      <div class="empty-chart" id="vol-empty">
+        <i class="ti ti-chart-bar" aria-hidden="true"></i>
+        Log dine løbeture for at se ugentlig volumen
+      </div>
+      <canvas id="volChart" style="display:none;" role="img" aria-label="Ugentlig løbevolumen"></canvas>
+    </div>
+  </div>
+
+  <button class="ai-analyze-btn" id="ai-btn" onclick="analyzeProgress()">
+    <i class="ti ti-brain" aria-hidden="true"></i>
+    <span id="ai-btn-text">AI-analyse af min fremgang</span>
+    <span class="ai-loading" id="ai-spinner"><span class="spinner"></span></span>
+  </button>
+  <div class="ai-result" id="ai-result"></div>
+</div>
+
+<!-- ZONES SECTION -->
+<div id="sec-zones" class="section">
+  <div class="pace-info">
+    <h4>MÅLPACE-FORDELING</h4>
+    <div class="pace-grid">
+      <div class="pace-item">
+        <div class="pace-label">Race pace (10K)</div>
+        <div class="pace-value">5:00/km</div>
+      </div>
+      <div class="pace-item">
+        <div class="pace-label">Rolig tur</div>
+        <div class="pace-value">6:00–6:45/km</div>
+      </div>
+      <div class="pace-item">
+        <div class="pace-label">Tempo (tærskelpace)</div>
+        <div class="pace-value">5:10–5:20/km</div>
+      </div>
+      <div class="pace-item">
+        <div class="pace-label">Intervalpace</div>
+        <div class="pace-value">4:40–4:50/km</div>
+      </div>
+      <div class="pace-item">
+        <div class="pace-label">Langtur</div>
+        <div class="pace-value">6:15–7:00/km</div>
+      </div>
+      <div class="pace-item">
+        <div class="pace-label">Restitutionstur</div>
+        <div class="pace-value">7:00+/km</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="zones-card">
+    <h3>Pulszoner (Garmin 245)</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:14px;">Baseret på ~180 bpm max HR. Justér i Garmin Connect under profil → HR zones → manuel indstilling.</p>
+
+    <div class="zone-row">
+      <div class="zone-label" style="color:#5ab4ff;">Z1 Restitution</div>
+      <div class="zone-bar-wrap"><div class="zone-bar" style="width:20%;background:#5ab4ff;"></div></div>
+      <div class="zone-range">&lt;108 bpm</div>
+    </div>
+    <div class="zone-row">
+      <div class="zone-label" style="color:#8fd4ff;">Z2 Aerob base</div>
+      <div class="zone-bar-wrap"><div class="zone-bar" style="width:40%;background:#8fd4ff;"></div></div>
+      <div class="zone-range">108–126 bpm</div>
+    </div>
+    <div class="zone-row">
+      <div class="zone-label" style="color:#ffc55a;">Z3 Aerob</div>
+      <div class="zone-bar-wrap"><div class="zone-bar" style="width:60%;background:#ffc55a;"></div></div>
+      <div class="zone-range">126–144 bpm</div>
+    </div>
+    <div class="zone-row">
+      <div class="zone-label" style="color:#ffaa00;">Z4 Tærskel</div>
+      <div class="zone-bar-wrap"><div class="zone-bar" style="width:80%;background:#ffaa00;"></div></div>
+      <div class="zone-range">144–162 bpm</div>
+    </div>
+    <div class="zone-row">
+      <div class="zone-label" style="color:#ff6b6b;">Z5 VO2max</div>
+      <div class="zone-bar-wrap"><div class="zone-bar" style="width:100%;background:#ff6b6b;"></div></div>
+      <div class="zone-range">162+ bpm</div>
+    </div>
+
+    <div class="garmin-tip">
+      <strong>Garmin tip:</strong> Din Forerunner 245 har Auto VO2 max og Training Status. Lad GPS og puls starte 60 sek. før du begynder at løbe for korrekt kalibrering. Brug "Run" aktivitet (ikke treadmill) for præcis pace-data.
+    </div>
+  </div>
+
+  <div class="zones-card">
+    <h3>80/20 princippet</h3>
+    <p style="font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;">
+      Denne plan følger 80/20-træningsprincippet: 80% af al løbetid foregår i lav intensitet (Z1–Z2), og kun 20% i høj intensitet (Z3–Z5). Dette er dokumenteret som den mest effektive tilgang for løbepræstation.
+    </p>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <div style="flex:4;background:rgba(90,180,255,0.2);border-radius:6px;padding:10px;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:#8fd4ff;font-family:'DM Mono',monospace;">80%</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Rolig/Z1-Z2</div>
+      </div>
+      <div style="flex:1;background:rgba(255,107,107,0.15);border-radius:6px;padding:10px;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:#ff9898;font-family:'DM Mono',monospace;">20%</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">Hård/Z3-Z5</div>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--text3);line-height:1.5;">
+      Den mest almindelige fejl er at løbe alt for hårdt på rolige ture. Det skal føles nærmest for let — du skal kunne tale i hele sætninger.
+    </p>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<script>
+const PLAN = [
+  {
+    week: 1, phase: 'base', title: 'Genopbygning', km: 15, note: 'Lav intensitet, væn kroppen til at løbe igen',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 4, pace: '6:30–7:00/km', hr: '120–130 bpm', desc: 'Meget rolig indsats — du skal kunne føre en hel samtale uden at blive stakåndet. Fokus er at komme i gang igen uden at belaste systemet. Lad GPS og puls starte 60 sek. inden du begynder.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Rolig tur', type: 'easy', km: 5, pace: '6:15–6:45/km', hr: '125–135 bpm', desc: 'Let indsats, kend din krop. Hvis pulsen kryber over 140 bpm, sænk farten. Husk at drikke vand inden turen.', zones: ['Z2'] },
+      { day: 'LØR', name: 'Langtur', type: 'long', km: 6, pace: '6:30–7:00/km', hr: '120–135 bpm', desc: 'Ugentlig langtur. Sæt et roligt tempo og hold det hele vejen — ingen acceleration mod slutningen. Formålet er tid på benene, ikke hastighed.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 2, phase: 'base', title: 'Aerob fundament', km: 18, note: '+3 km fra uge 1 — stadig rolige tider',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 5, pace: '6:15–6:45/km', hr: '125–135 bpm', desc: 'Mærk om benene er klar fra weekenden. Er de tunge, løb lidt langsommere. Aerob base-løb — pulsen må gerne være tæt på den nedre grænse.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Rolig tur + strideouts', type: 'easy', km: 6, pace: '6:00–6:30/km + strideouts', hr: '125–140 bpm', desc: '5 km rolig løb efterfulgt af 4 × 80 m strideouts: løb gradvist op til 90% af maks. fart over 80 m, og sænk igen over de næste 50 m. Gå 60 sek. mellem hver. Disse vækker nervesystemet og forbedrer løbeøkonomien.', zones: ['Z2', 'Z4'] },
+      { day: 'LØR', name: 'Langtur', type: 'long', km: 7, pace: '6:20–6:50/km', hr: '125–138 bpm', desc: '7 km rolig langtur. Fokus på konstant, komfortabelt tempo hele vejen. Tag vand med — over 45 min. bør du drikke undervejs.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 3, phase: 'base', title: 'Første tempotouche', km: 20, note: 'Første bløde introduktion til tempo',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 5, pace: '6:15–6:45/km', hr: '125–135 bpm', desc: 'Let løb som aktiv restitution fra weekendens langtur. Hold pulsen nede og prioriter afslappet teknik frem for hastighed.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Tempointro', type: 'tempo', km: 7, pace: 'Opv: 6:30/km · Tempo: 5:15–5:25/km · Nedkøl: 6:30/km', hr: 'Opv: 120–130 · Tempo: 148–158 bpm', desc: '2 km rolig opvarmning → 3 × 5 min ved "comfortably hard" pace (du kan sige korte sætninger, men ikke føre samtale) → 90 sek. let jogg som pause → 1 km rolig nedkøling. Første smag af tærskelpace — gå ikke for hårdt til.', zones: ['Z3', 'Z4'] },
+      { day: 'LØR', name: 'Langtur', type: 'long', km: 8, pace: '6:20–6:50/km', hr: '125–140 bpm', desc: '8 km rolig langtur. Ingen præstationsfokus — lad kroppen absorbere ugens arbejde. Løb på følelse, ikke ur.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 4, phase: 'base', title: 'Restituitionsuge', km: 15, note: 'Nedtrapning — lad kroppen absorbere træningen',
+    sessions: [
+      { day: 'MAN', name: 'Restitutionstur', type: 'recovery', km: 4, pace: '6:45–7:30/km', hr: '115–128 bpm', desc: 'Meget let løb — dette er en aktiv restitutionstur, ikke en træningstur. Pulsen MÅ ikke overstige 130 bpm. Øget blodcirkulation hjælper med muskelreparation. Gå en tur hvis benene er virkelig tunge.', zones: ['Z1', 'Z2'] },
+      { day: 'ONS', name: 'Rolig tur', type: 'easy', km: 5, pace: '6:10–6:40/km', hr: '125–138 bpm', desc: 'Moderat let 5 km. Nyd den kortere uge — dette er planlagt restitution, og det er her kroppen faktisk adapterer til træningen.', zones: ['Z2'] },
+      { day: 'LØR', name: 'Rolig langtur', type: 'long', km: 6, pace: '6:20–6:50/km', hr: '125–135 bpm', desc: 'Kortere langtur som restituitionsuge. Nyd det rolige tempo. Ingen grund til at presse — du er frisk til uge 5 bagefter.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 5, phase: 'build', title: 'Opbygning starter', km: 22, note: 'Mere volumen og første rigtige tempotur',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 6, pace: '6:00–6:30/km', hr: '128–140 bpm', desc: '6 km rolig løb som fundament for ugens hårdere ture. Løb afslappet og spar energi til onsdagens tempotur.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Tempotur', type: 'tempo', km: 8, pace: 'Opv: 6:30/km · Tempo: 5:10–5:20/km · Nedkøl: 6:30/km', hr: 'Opv: 120–130 · Tempo: 150–162 bpm', desc: '2 km rolig opvarmning → 4 km sammenhængende tempo ved laktatgrænsen (du mærker det tydeligt, men kan holde det stabilt) → 2 km rolig nedkøling. Tærskeltræning er det mest effektive redskab til at forbedre 10K-tid.', zones: ['Z3', 'Z4'] },
+      { day: 'LØR', name: 'Langtur', type: 'long', km: 8, pace: '6:15–6:45/km', hr: '128–142 bpm', desc: '8 km rolig langtur. Progressivt øget volumen fra uge 4. Hold et jævnt tempo og brug turen til mentalt at sætte dig ind i race-planen.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 6, phase: 'build', title: 'Intervaller introduceres', km: 24, note: 'Første VO2max-stimuli med intervaltræning',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 6, pace: '6:00–6:30/km', hr: '128–140 bpm', desc: 'Let løb — spar kræfter til onsdagens intervaller. Hvis benene er tunge fra weekenden, sænk farten yderligere.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Intervaltræning 800 m', type: 'interval', km: 8, pace: 'Opv: 6:30/km · Intervaller: 4:45–4:55/km · Joggepause: 6:30/km', hr: 'Opv: 120–130 · Intervaller: 162–172 bpm', desc: '2 km rolig opvarmning → 5 × 800 m ved hård men kontrolleret indsats (du kan sige ét ord ad gangen) med 2 min. let joggepause → 2 km rolig nedkøling. 800 m er den klassiske 10K-interval: lang nok til at stimulere VO2max, kort nok til at bevare god form.', zones: ['Z4', 'Z5'] },
+      { day: 'LØR', name: 'Langtur — 10 km!', type: 'long', km: 10, pace: '6:15–6:45/km', hr: '128–142 bpm', desc: 'Første 10 km langtur — stor milepæl! Rolig og kontrolleret hele vejen. Du løber race-distancen for første gang. Tag det stille og roligt — intet at bevise endnu.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 7, phase: 'build', title: 'Peak-uge', km: 26, note: 'Ugens hårdeste uge i hele planen',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 6, pace: '6:00–6:30/km', hr: '128–140 bpm', desc: 'Rolig 6 km som fundament. Energibevar — onsdagens session er ugens tyngste.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Tempotur + fartleg', type: 'tempo', km: 9, pace: 'Opv: 6:30 · Tempo: 5:10–5:20 · Fartleg: 4:40/km · Nedkøl: 6:30/km', hr: 'Tempo: 150–162 · Fartleg: 165–174 bpm', desc: '2 km opvarmning → 20 min. continuous tempo (5:10–5:20/km) → direkte ind i 3 × 2 min. hård indsats (4:40/km) med 1 min. let jogg imellem → 2 km nedkøling. Kombination af tærskel + fart er meget effektiv for 10K. Den hårdeste session i planen.', zones: ['Z3', 'Z4', 'Z5'] },
+      { day: 'LØR', name: 'Progressiv langtur', type: 'long', km: 11, pace: 'Første 9 km: 6:20–6:45/km · Sidste 2 km: 5:40–5:50/km', hr: 'Første 9 km: 130–142 · Sidste 2 km: 148–158 bpm', desc: '11 km langtur med progressiv afslutning: de første 9 km rolig base-pace, de sidste 2 km skifter du op til halvmarathon-tempo. Træner kroppen i at løbe hurtigt på trætte ben — direkte race-specifik forberedelse.', zones: ['Z2', 'Z3'] },
+    ]
+  },
+  {
+    week: 8, phase: 'build', title: 'Restituitionsuge', km: 18, note: 'Nedtrapning — super vigtigt at overholde',
+    sessions: [
+      { day: 'MAN', name: 'Restitutionstur', type: 'recovery', km: 4, pace: '6:45–7:30/km', hr: '115–125 bpm', desc: 'Meget let 4 km. Puls UNDER 125 bpm — gå hvis nødvendigt. Uge 7 var tung, og denne tur handler udelukkende om at fremme restitution med øget blodcirkulation.', zones: ['Z1', 'Z2'] },
+      { day: 'ONS', name: 'Rolig tur', type: 'easy', km: 6, pace: '6:00–6:30/km', hr: '128–140 bpm', desc: '6 km rolig løb. Nyd det langsommere tempo — dette er planlagt, og du er mere klar til uge 9 bagefter.', zones: ['Z2'] },
+      { day: 'LØR', name: 'Kortere langtur', type: 'long', km: 8, pace: '6:15–6:45/km', hr: '128–140 bpm', desc: '8 km let langtur — kortere end uge 7, som planlagt. Lad være med at "kompensere" ved at løbe hurtigere. Tillad kroppen at superkomensere.', zones: ['Z2'] },
+    ]
+  },
+  {
+    week: 9, phase: 'specific', title: 'Race-specifik', km: 24, note: 'Mærk race-pace i benene',
+    sessions: [
+      { day: 'MAN', name: 'Rolig tur', type: 'easy', km: 6, pace: '6:00–6:30/km', hr: '128–140 bpm', desc: 'Rolig 6 km som base inden ugens centrale session onsdag. Hold intensiteten nede — onsdag er vigtig.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Race-pace intervaller', type: 'interval', km: 10, pace: 'Opv: 6:30/km · Intervaller: 5:00/km · Joggepause: 6:15/km', hr: 'Opv: 120–130 · Intervaller: 158–168 bpm', desc: '2 km rolig opvarmning → 3 × 2000 m præcist ved race-pace (5:00/km) med 3 min. let joggepause → 2 km rolig nedkøling. Dette er den vigtigste session i hele planen. Du træner kroppen og hjernen til at kende race-pace fra indersiden.', zones: ['Z4', 'Z5'] },
+      { day: 'LØR', name: 'Progressiv langtur', type: 'long', km: 8, pace: 'Første 6 km: 6:20–6:45/km · Sidste 2 km: 5:00–5:05/km', hr: 'Første 6 km: 128–140 · Sidste 2 km: 158–168 bpm', desc: '6 km rolig → 2 km ved præcis race-pace (5:00/km). Testen: kan du holde race-pace på trætte ben? Hvis ja, er du klar til løbet. Løb de 2 km kontrolleret — ikke hurtigere.', zones: ['Z2', 'Z4'] },
+    ]
+  },
+  {
+    week: 10, phase: 'taper', title: 'Taper & løb', km: 12, note: 'Friske ben til løbet — tillid frem for træning',
+    sessions: [
+      { day: 'MAN', name: 'Let løb', type: 'easy', km: 4, pace: '6:15–6:45/km', hr: '125–138 bpm', desc: '4 km meget roligt. Du er klar — det handler nu om at holde sig frisk. Stol på de 9 ugers arbejde.', zones: ['Z2'] },
+      { day: 'ONS', name: 'Aktiveringstur', type: 'tempo', km: 5, pace: 'Opv: 6:30/km · Race-pace: 5:00/km · Nedkøl: 6:30/km', hr: 'Opv: 120–130 · Race-pace: 158–165 bpm', desc: '1.5 km rolig opvarmning → 3 × 1 km præcist ved race-pace (5:00/km) med 2 min. pause → 1.5 km nedkøling. Minder musklerne om race-pace uden at slide på dem. Du skal føle dig stærk og kontrolleret.', zones: ['Z2', 'Z4'] },
+      { day: 'FRE', name: 'Meget let jogg', type: 'recovery', km: 3, pace: '6:45–7:30/km', hr: '115–128 bpm', desc: '3 km MEGET roligt — bare for at holde benene løse dagen inden race. Stop uden tøven hvis du er træt. Ingen helte-mentalitet fredag.', zones: ['Z1'] },
+      { day: 'SØN', name: '🏁 10KM LØBET!', type: 'race', km: 10, pace: '5:00/km (mål: sub 50:00)', hr: 'Start: 155–160 · Km 5–8: 162–168 · Km 8–10: alt hvad du har', desc: 'Opvarmning: 10 min. let jogg + 4 × 100 m stigningsløb. RACESTRATEGI: Start roligt ved 5:05/km de første 3 km (mange løber for hurtigt ud). Km 3–7: lås ind på 5:00/km. Km 7–9: øg gradvist. Km 9–10: læg alt hvad du har. Nyd det — du har fortjent det!', zones: ['Z4', 'Z5'] },
+    ]
+  },
+];
+
+const phaseMap = { base: 'Basefase', build: 'Opbygningsfase', specific: 'Specifik fase', taper: 'Nedtrapning' };
+const phaseOrder = ['base','build','specific','taper'];
+
+function buildPlan() {
+  const container = document.getElementById('plan-container');
+  let currentPhase = null;
+  let html = '';
+  PLAN.forEach(w => {
+    if (w.phase !== currentPhase) {
+      currentPhase = w.phase;
+      html += `<div class="phase-header">${phaseMap[w.phase]}</div>`;
+    }
+    const phCls = `phase-${w.phase}`;
+    html += `<div class="week-block">
+      <div class="week-header" onclick="toggleWeek(${w.week})">
+        <div class="week-left">
+          <div class="week-num ${phCls}">${w.week < 10 ? '0'+w.week : w.week}</div>
+          <div>
+            <div class="week-title">${w.title} <span class="phase-tag phase-${w.phase}-tag">${phaseMap[w.phase]}</span></div>
+            <div class="week-meta">${w.note}</div>
+          </div>
+        </div>
+        <div class="week-km">${w.km} km <i class="ti ti-chevron-down" id="chev-${w.week}" aria-hidden="true"></i></div>
+      </div>
+      <div class="session-list" id="sessions-${w.week}">`;
+    w.sessions.forEach(s => {
+      const chips = [];
+      if (s.pace) chips.push(`<span class="chip chip-pace"><i class="ti ti-run" aria-hidden="true"></i><span class="chip-label">PACE</span>${s.pace}</span>`);
+      if (s.hr) chips.push(`<span class="chip chip-hr"><i class="ti ti-heart-rate-monitor" aria-hidden="true"></i><span class="chip-label">PULS</span>${s.hr}</span>`);
+      html += `<div class="session">
+        <div class="session-day">${s.day}</div>
+        <div class="session-body">
+          <div class="session-name">
+            ${s.name}
+            <span class="type-tag type-${s.type}">${typeLabel(s.type)}</span>
+            ${s.km ? `<span style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;">${s.km} km</span>` : ''}
+          </div>
+          ${chips.length ? `<div class="session-chips">${chips.join('')}</div>` : ''}
+          <div class="session-desc">${s.desc}</div>
+          <div class="session-zones">${s.zones.map(z => `<span class="zone-pill">${z}</span>`).join('')}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+  container.innerHTML = html;
+}
+
+function typeLabel(t) {
+  const m = { easy:'Rolig', tempo:'Tempo', interval:'Interval', long:'Langtur', recovery:'Restitution', rest:'Hvil', race:'LØBET' };
+  return m[t] || t;
+}
+
+function toggleWeek(w) {
+  const el = document.getElementById(`sessions-${w}`);
+  const chev = document.getElementById(`chev-${w}`);
+  el.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+function showTab(tab) {
+  ['plan','log','progress','zones'].forEach(t => {
+    document.getElementById(`sec-${t}`).classList.toggle('active', t === tab);
+    document.querySelectorAll('.nav-btn')[['plan','log','progress','zones'].indexOf(t)].classList.toggle('active', t === tab);
+  });
+  if (tab === 'log') renderRuns();
+  if (tab === 'progress') { updateStats(); renderCharts(); }
+}
+
+// Set today as default date
+document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+
+function getRuns() {
+  try { return JSON.parse(localStorage.getItem('runs') || '[]'); } catch { return []; }
+}
+function saveRuns(r) { localStorage.setItem('runs', JSON.stringify(r)); }
+
+function saveRun() {
+  const date = document.getElementById('log-date').value;
+  const type = document.getElementById('log-type').value;
+  const dist = parseFloat(document.getElementById('log-dist').value);
+  const time = document.getElementById('log-time').value;
+  const hr = parseInt(document.getElementById('log-hr').value) || null;
+  const cad = parseInt(document.getElementById('log-cad').value) || null;
+  const rpe = parseInt(document.getElementById('log-rpe').value);
+  const notes = document.getElementById('log-notes').value;
+
+  if (!date || !dist || !time) {
+    alert('Udfyld dato, distance og tid');
+    return;
+  }
+  const pace = calcPace(dist, time);
+  const runs = getRuns();
+  runs.unshift({ id: Date.now(), date, type, dist, time, hr, cad, rpe, notes, pace });
+  saveRuns(runs);
+
+  document.getElementById('log-dist').value = '';
+  document.getElementById('log-time').value = '';
+  document.getElementById('log-hr').value = '';
+  document.getElementById('log-cad').value = '';
+  document.getElementById('log-notes').value = '';
+  document.getElementById('log-rpe').value = 6;
+  document.getElementById('rpe-out').textContent = '6';
+
+  renderRuns();
+}
+
+function calcPace(dist, timeStr) {
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return null;
+  const totalSec = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  const paceSec = totalSec / dist;
+  const min = Math.floor(paceSec / 60);
+  const sec = Math.round(paceSec % 60);
+  return `${min}:${sec.toString().padStart(2,'0')}`;
+}
+
+function calcPaceNum(dist, timeStr) {
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return null;
+  const totalSec = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  return totalSec / dist / 60;
+}
+
+function typeColors(t) {
+  const m = { easy:'#5ab4ff', tempo:'#ffc55a', interval:'#b8ff57', long:'#c49fff', recovery:'#ff6b6b', race:'#b8ff57' };
+  return m[t] || '#888';
+}
+
+function rpeColor(r) {
+  if (r <= 4) return 'rgba(90,180,255,0.2)';
+  if (r <= 6) return 'rgba(255,197,90,0.2)';
+  return 'rgba(255,107,107,0.2)';
+}
+function rpeTextColor(r) {
+  if (r <= 4) return '#5ab4ff';
+  if (r <= 6) return '#ffc55a';
+  return '#ff6b6b';
+}
+
+const MONTHS = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+function renderRuns() {
+  const runs = getRuns();
+  const el = document.getElementById('runs-list');
+  if (!runs.length) {
+    el.innerHTML = '<div class="no-runs"><i class="ti ti-run" aria-hidden="true"></i><br>Ingen løbeture endnu — log din første tur!</div>';
+    return;
+  }
+  el.innerHTML = runs.map(r => {
+    const d = new Date(r.date);
+    return `<div class="run-card">
+      <div class="run-date" style="color:${typeColors(r.type)}">
+        <div class="run-day">${d.getDate()}</div>
+        <div class="run-mon">${MONTHS[d.getMonth()]}</div>
+      </div>
+      <div class="run-data">
+        <div class="run-title">${typeLabel(r.type)} — ${r.dist} km</div>
+        <div class="run-stats">
+          <div class="run-stat">
+            <div class="run-stat-val">${r.time}</div>
+            <div class="run-stat-lbl">tid</div>
+          </div>
+          ${r.pace ? `<div class="run-stat">
+            <div class="run-stat-val">${r.pace}</div>
+            <div class="run-stat-lbl">min/km</div>
+          </div>` : ''}
+          ${r.hr ? `<div class="run-stat">
+            <div class="run-stat-val">${r.hr}</div>
+            <div class="run-stat-lbl">bpm</div>
+          </div>` : ''}
+        </div>
+      </div>
+      <div class="run-rpe" style="background:${rpeColor(r.rpe)};color:${rpeTextColor(r.rpe)};">${r.rpe}</div>
+    </div>`;
+  }).join('');
+}
+
+let paceChart, volChart;
+
+function updateStats() {
+  const runs = getRuns();
+  const totalKm = runs.reduce((s, r) => s + r.dist, 0);
+  document.getElementById('stat-total-km').textContent = totalKm.toFixed(1);
+  document.getElementById('stat-runs').textContent = runs.length;
+
+  const paces = runs.filter(r => r.pace).map(r => calcPaceNum(r.dist, r.time)).filter(p => p);
+  if (paces.length) {
+    const best = Math.min(...paces);
+    const min = Math.floor(best);
+    const sec = Math.round((best - min) * 60);
+    document.getElementById('stat-best-pace').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  }
+
+  if (runs.length) {
+    const avgRpe = runs.reduce((s, r) => s + r.rpe, 0) / runs.length;
+    document.getElementById('stat-avg-rpe').textContent = avgRpe.toFixed(1);
+  }
+}
+
+function getWeekKey(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay() || 7;
+  const mon = new Date(d);
+  mon.setDate(d.getDate() - day + 1);
+  return mon.toISOString().split('T')[0];
+}
+
+function renderCharts() {
+  const runs = getRuns();
+  if (!runs.length) return;
+
+  const sorted = [...runs].sort((a,b) => a.date.localeCompare(b.date));
+
+  // Pace chart
+  const paceData = sorted.filter(r => r.pace).map(r => ({
+    x: r.date,
+    y: parseFloat(calcPaceNum(r.dist, r.time).toFixed(2))
+  }));
+
+  if (paceData.length) {
+    document.getElementById('pace-empty').style.display = 'none';
+    const canvas = document.getElementById('paceChart');
+    canvas.style.display = 'block';
+    if (paceChart) paceChart.destroy();
+    paceChart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: paceData.map(d => d.x),
+        datasets: [{
+          label: 'Pace (min/km)',
+          data: paceData.map(d => d.y),
+          borderColor: '#b8ff57',
+          backgroundColor: 'rgba(184,255,87,0.08)',
+          pointBackgroundColor: '#b8ff57',
+          pointRadius: 4,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            reverse: true,
+            ticks: { color: '#5c5b58', callback: v => v.toFixed(1) },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          x: {
+            ticks: { color: '#5c5b58', maxTicksLimit: 6 },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          }
+        }
+      }
+    });
+  }
+
+  // Weekly volume chart
+  const weeklyVol = {};
+  sorted.forEach(r => {
+    const wk = getWeekKey(r.date);
+    weeklyVol[wk] = (weeklyVol[wk] || 0) + r.dist;
+  });
+  const wkLabels = Object.keys(weeklyVol).sort();
+  const wkData = wkLabels.map(k => parseFloat(weeklyVol[k].toFixed(1)));
+
+  if (wkLabels.length) {
+    document.getElementById('vol-empty').style.display = 'none';
+    const canvas2 = document.getElementById('volChart');
+    canvas2.style.display = 'block';
+    if (volChart) volChart.destroy();
+    volChart = new Chart(canvas2, {
+      type: 'bar',
+      data: {
+        labels: wkLabels.map(l => 'Uge ' + l.slice(5,7) + '/' + l.slice(2,4)),
+        datasets: [{
+          label: 'km',
+          data: wkData,
+          backgroundColor: 'rgba(184,255,87,0.25)',
+          borderColor: '#b8ff57',
+          borderWidth: 1,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            ticks: { color: '#5c5b58' },
+            grid: { color: 'rgba(255,255,255,0.05)' }
+          },
+          x: {
+            ticks: { color: '#5c5b58' },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          }
+        }
+      }
+    });
+  }
+}
+
+async function analyzeProgress() {
+  const runs = getRuns();
+  if (runs.length < 2) {
+    alert('Log mindst 2 løbeture for at få en AI-analyse.');
+    return;
+  }
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true;
+  document.getElementById('ai-btn-text').textContent = 'Analyserer...';
+  document.getElementById('ai-spinner').style.display = 'inline-block';
+
+  const totalKm = runs.reduce((s, r) => s + r.dist, 0).toFixed(1);
+  const avgRpe = (runs.reduce((s, r) => s + r.rpe, 0) / runs.length).toFixed(1);
+  const paces = runs.filter(r => r.pace).map(r => `${r.date}: ${r.pace}/km (${r.dist}km, RPE ${r.rpe})`).join('\n');
+
+  const prompt = `Du er en løbecoach. Analysér følgende løbedata og giv konkret, personlig dansk feedback:
+
+Mål: 10 km på 50 min (5:00/km)
+Antal løbeture: ${runs.length}
+Total distance: ${totalKm} km
+Gennemsnitlig RPE: ${avgRpe}
+
+Løbeture (seneste først):
+${paces}
+
+Giv:
+1. En vurdering af progressionen mod målet
+2. Det vigtigste fokuspunkt til næste uge
+3. Én specifik anbefaling (pace, volumen, intensitet)
+
+Svar kort og direkte, max 120 ord, på dansk.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.find(b => b.type === 'text')?.text || 'Ingen analyse tilgængelig.';
+    const resultEl = document.getElementById('ai-result');
+    resultEl.innerHTML = text.replace(/\n/g, '<br>');
+    resultEl.classList.add('show');
+  } catch(e) {
+    document.getElementById('ai-result').innerHTML = 'Analyse ikke tilgængelig lige nu. Prøv igen senere.';
+    document.getElementById('ai-result').classList.add('show');
+  }
+
+  btn.disabled = false;
+  document.getElementById('ai-btn-text').textContent = 'Opdater AI-analyse';
+  document.getElementById('ai-spinner').style.display = 'none';
+}
+
+buildPlan();
+renderRuns();
+</script>
+</body>
+</html>
